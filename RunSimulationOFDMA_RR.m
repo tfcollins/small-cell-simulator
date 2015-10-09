@@ -45,7 +45,9 @@ for TTI = 0:sim.TTIDuration:sim.Duration
         case 'RandomAccess'
             
             % Update time in state
-            RATime = RATime + 1;
+            % Since bandwidht remains fixed it will take longer to transmit
+            % a reservation packet
+            RATime = RATime + numChannels;
             
             % Reset all UEs Packet Queues to zeros, this simulation
             % requires no memory

@@ -6,7 +6,9 @@ classdef PathlossSimpleLTE1 < handle
     %
     % TODO: check what units distance has to be in
     %       GET LWALL Value
-    
+    %
+    % Model from: http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=6868315
+    %
     properties (Constant)
         Lwall = 10;
     end
