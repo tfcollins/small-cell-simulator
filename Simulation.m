@@ -46,35 +46,6 @@ classdef Simulation < handle
             end
             
         end
-%         % Get distance from all eNBs to each UE
-%         function CalculateDistancesUE2eNBeNBsToUEs(obj)
-%             
-%             % Preallocate
-%             numENBs = length(obj.eNBs);
-%             maxUEs = 0;
-%             for x=1:numENBs
-%                 if (length(obj.eNBs(x).UEs)>maxUEs)
-%                     maxUEs = length(obj.eNBs(x).UEs);
-%                 end
-%             end
-%             obj.DistancesUE2eNB = zeros(numENBs,maxUEs);
-%             
-%             % Cycle through eNBs and UEs
-%             for x=1:numENBs
-%                 
-%                 numUEs = length(obj.eNBs(x).UEs);
-%                 for y = 1:numUEs
-%                     
-%                     xdiff = obj.eNBs(x).Position(1)-obj.eNBs(x).UEs(y).Position(1);
-%                     ydiff = obj.eNBs(x).Position(2)-obj.eNBs(x).UEs(y).Position(2);
-%                     
-%                     d = sqrt( xdiff^2+ydiff^2 );
-%                     
-%                     obj.DistancesUE2eNB(x,y) = d;
-%                 end
-%             end
-%             
-%         end
         % Get Distance from 2D Positions
         function distance = GetDistance(~,Position1,Position2)
             
@@ -85,23 +56,7 @@ classdef Simulation < handle
             end
             
         end
-        % Get new pathlosses based on positions
-        function pl = GetPathloss(~,distance,type)
-            
-            % TODO: check what units distance has to be in
-            %       GET LWALL Value
-            
-            Lwall = 10;
-            
-            if strcmpi(type,'Signal')
-                % No walls
-                pl = 28 + 35*log10(distance);
-            else % strcmpi(type,'Interference')
-                % Through walls
-                pl = 38.5 + 20*log10(distance) + Lwall;
-            end
-        end
-        % UPdate SINR for each channel
+        % Update SINR for each channel
         function UpdateSINRPerChannel(obj,eNBofUE,UE)
         
            channelSet = obj.eNBs(eNBofUE).UEs(UE).UsingChannels;
