@@ -9,7 +9,8 @@
 sim1 = Simulation;
 
 % Add Base Stations
-sim1.AddeNBs(100);
+N = 100;
+sim1.AddeNBs(N);
 
 % Add UE's to eNB's
 sim1.AddUEToEach(1);
@@ -20,29 +21,31 @@ sim1.SetAlleNBs('LicensedChannels',1:K);
 
 
 %% Run sim
-pp = gcp;cores = pp.NumWorkers;
+%pp = gcp;cores = pp.NumWorkers;
+cores = 2;
 G = linspace(0.1,10,cores);
 TransmitProbabilities = G./N;
-DataPacketSize = 10; % TTIs of active transmission slot, after random access phase
+DataPacketSize = 5; % TTIs of active transmission slot, after random access phase
 
 % Stats
 RATime = zeros(length(TransmitProbabilities),1);
 TxTime = zeros(length(TransmitProbabilities),1);
 
-parfor y=1:length(TransmitProbabilities)
+% Flags
+testThroughput = false;
+debug = false;
+
+for y=1:length(TransmitProbabilities)
     
     [RATime(y),TxTime(y)] = RunSimulationOFDMA_RR(sim1,TransmitProbabilities(y),DataPacketSize,testThroughput,debug);
     
     disp(['Worker finished: ',num2str(y)]);
     
-    RATime(y) = RATimes;
-    TxTime(y) = TxTimes;
-    
 end
 
-Throughput = TxTime./(RATime+TxTime);
+offeredLoad = TxTime./(RATime+TxTime);
 
-plot(G,Throughput);
+plot(G,offeredLoad);
 xlabel('TransmitProbabilities');
 ylabel('Throughput');
 grid on;
