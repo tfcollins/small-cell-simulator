@@ -18,6 +18,8 @@ classdef Simulation < handle
     properties(Access = protected)
         DistancesUE2eNB  % UE to eNB Distance [eNB, UE]
         Pathlosses % UE to eNB Pathloss [eNB, UE]
+        % Plot Stuff
+        SubChannelLegend = {};
     end
     
     methods
@@ -254,6 +256,66 @@ classdef Simulation < handle
             else
                 obj.ChannelPowerHistory(:,:,end+1) = hist;
             end
+        end
+        % Get SINR vector of subchannels averaged over UEs
+        function GetMeanSubchannelSINRs(obj)
+        
+            % Create a vector for each eNB
+           for eNB=1:length(obj.eNBs)
+               % Loop over eNBs active subchannels
+               for channel = 1:length(obj.eNBs(eNB).ChannelsInUse)
+                   % Reset meaning vector
+                   ChannelSINR = [];
+                   % Get each SINR for UEs in that channel
+                   for UE=1:length(obj.eNBs(eNB).UEs)
+                   
+                       channelCheck = obj.eNBs(eNB).UEs(UE).UsingChannels...
+                           ==obj.eNBs(eNB).ChannelsInUse(channel);
+                       
+                       % Add to vector to be meaned
+                       if sum(channelCheck)>0
+                           
+                           [~,ind] = find(channelCheck);
+                           
+                           ChannelSINR = [ChannelSINR ,...
+                               obj.eNBs(eNB).UEs(UE).ChannelSINRdB(ind)]; %#ok<AGROW>
+                       end
+                       
+                   end % UEs
+                   
+                   % Average UE SINR's
+                   obj.eNBs(eNB).MeanSubchannelSINR(channel) = mean(ChannelSINR);
+                   
+               end % Channels
+           end % eNBs
+        end
+        
+        % View bar graph of power allocated in each subchannel by each eNB
+        function ViewSubchannels(obj)
+            
+            % rows are groups of bars == subchannel
+            % columns == eNB
+            
+            % Build input to bargraph
+            powers = zeros(length(obj.eNBs(1).LicensedChannels),length(obj.eNBs));
+            for eNB = 1:length(obj.eNBs)
+                powers(obj.eNBs(eNB).ChannelsInUse,eNB) = obj.eNBs(eNB).MeanSubchannelSINR;
+            end
+            % Plot
+            bar(powers);
+            xlabel('Subchannel Index');
+            ylabel('SINR');
+            % Create legend
+            if isempty(obj.SubChannelLegend)
+            leg = {};
+            for eNB = 1:length(obj.eNBs)
+                leg = {leg{:},['eNB=',num2str(eNB)]};
+            end
+                obj.SubChannelLegend = leg;
+            end
+            legend(obj.SubChannelLegend);
+            drawnow;
+            pause(0.1);
         end
         
     end % Methods

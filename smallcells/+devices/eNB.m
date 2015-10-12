@@ -8,10 +8,11 @@ classdef eNB < handle & matlab.mixin.SetGet
         AntennaGain = 2;        % dBi
         Bandwidth = 10e6;       % Hertz
         CenterFreq = 1.8e9;     % Hertz
-        ChannelsInUse           % Integer Array
+        ChannelsInUse           % Integer Array of channels UEs are using
         LicensedChannels = 1:12; % Array of channels we can use
         UEs                      % Array of UE objectes
         UEIndex = 1;            % Index currently addressing UE, used to keep things fair
+        MeanSubchannelSINR      % SINR at each active subchannel, averaged over UEs
     end
     
     methods
@@ -65,15 +66,17 @@ classdef eNB < handle & matlab.mixin.SetGet
                 
             end
         end
-        % Pick channels randomly
+        % Pick channels randomly (used really for testing)
         function PickRandomChannels(obj,numChannels)
             
             % Shuffle possible channels
             shuffledChannels = randperm(length(obj.LicensedChannels));
             % Pick subset
             obj.ChannelsInUse = shuffledChannels(1:numChannels);
-            
-            
+            % Let all UEs to use all these channels
+            for UE = 1:length(obj.UEs)
+                obj.UEs(UE).UsingChannels = obj.ChannelsInUse;
+            end
         end
     end
 end
