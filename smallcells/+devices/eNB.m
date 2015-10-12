@@ -13,6 +13,7 @@ classdef eNB < handle & matlab.mixin.SetGet
         UEs                      % Array of UE objectes
         UEIndex = 1;            % Index currently addressing UE, used to keep things fair
         MeanSubchannelSINR      % SINR at each active subchannel, averaged over UEs
+        GameModel               % Only used in game theory simulations, usually a struct
     end
     
     methods

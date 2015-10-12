@@ -171,6 +171,15 @@ classdef Simulation < handle
                 plot(xy(1),xy(2),'r.','MarkerSize',30)
                 hold off;
                 end
+                % % Draw circle
+                %th = 0:pi/50:2*pi;
+                %r = sqrt(sum(xy^2));
+                %xunit = r * cos(th) + xy(1);
+                %yunit = r * sin(th) + xy(2);
+                %hold on;
+                %plot(xunit, yunit);
+                %hold off;
+                
                 for UE = 1:length(obj.eNBs(eNB).UEs)
                     % Mark eNB
                     xy = obj.eNBs(eNB).UEs(UE).Position;
