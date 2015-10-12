@@ -7,16 +7,19 @@
 
 % Creat sim
 sim1 = Simulation;
+MaxTries = 1e3;  % Game round to reach equilibrium
+sim1.Duration = sim1.TTIDuration*MaxTries;
 sim1.MapDims = [10,10];
 
 % Add Base Stations
 sim1.AddeNBs(2);
 
-% Add UE's to eNB's
+% Add UEs to eNB
 sim1.AddUEToEach(1);
 
 % Set some properties to all eNB
-sim1.SetAlleNBs('LicensedChannels',1:2);
+TotalChannels = 10;
+sim1.SetAlleNBs('LicensedChannels',1:TotalChannels);
 
 % Place eNBs
 sim1.eNBs(1).Position = [3,5];
@@ -35,3 +38,7 @@ sim1.eNBs(2).SetUEChannels(1,2);
 sim1.UpdateSINRForUEs();
 showSINR = true;
 sim1.ShowMap(showSINR);
+
+% Run game
+RunSimulation_GameTheory(sim1);
+

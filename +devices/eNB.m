@@ -10,7 +10,7 @@ classdef eNB < handle & matlab.mixin.SetGet
         CenterFreq = 1.8e9;     % Hertz
         ChannelsInUse           % Integer Array
         LicensedChannels = 1:12; % Array of channels we can use
-        UEs % Array of UE objectes
+        UEs                      % Array of UE objectes
         UEIndex = 1;            % Index currently addressing UE, used to keep things fair
     end
     
@@ -64,6 +64,15 @@ classdef eNB < handle & matlab.mixin.SetGet
                     obj.UEs(UE).PacketDelays + obj.UEs(UE).PacketDelays>0;
                 
             end
+        end
+        % Pick channels randomly
+        function PickRandomChannels(obj,numChannels)
+            
+            % Shuffle possible channels
+            shuffledChannels = randperm(length(obj.LicensedChannels));
+            % Pick subset
+            obj.ChannelsInUse = shuffledChannels(1:numChannels);
+            
             
         end
     end

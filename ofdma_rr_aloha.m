@@ -3,14 +3,14 @@
 % traviscollins@wpi.edu
 % Wireless Innovation Lab
 
-% This simulation correctly simualates:
+% This simulation correctly repeats results in:
 % An OFDM-Aware Reservation Random Access Protocol for Interference Mitigation in OFDMA Femtocells
 
-%% Simulation
+%% Configure simulation
 
 % Creat sim and set duration
 sim1 = Simulation;
-sim1.Duration = sim1.TTIDuration*1e5;
+sim1.Duration = sim1.TTIDuration*1e6;
 
 % Add Base Stations
 N = 100;
@@ -19,8 +19,8 @@ sim1.AddeNBs(N);
 % Add UE's to eNB's
 sim1.AddUEToEach(1);
 
-%% Run sim
-pp = gcp;cores = pp.NumWorkers; % Set sim points based on number of cpu cores
+% Set sim points based on number of cpu cores
+pp = gcp;cores = pp.NumWorkers;
 G = linspace(0.1,10,cores);
 TransmitProbabilities = G./N;
 
@@ -29,6 +29,8 @@ a = 0.1;
 
 ReservationPacketSize = 1; % Do not change
 DataPacketSize = ReservationPacketSize/a; % TTIs of active transmission slot, after random access phase
+
+%% Run sim
 
 % Stats
 RATime = zeros(length(TransmitProbabilities),1);
@@ -58,6 +60,7 @@ end
 % Calculate offered load
 offeredLoad = TxTime./(RATime+TxTime);
 
+%% Plot
 hold on;
 plot(G,offeredLoad);
 xlabel('Offered Load');

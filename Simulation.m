@@ -7,12 +7,14 @@ classdef Simulation < handle
         MaxUEsOfAnyENB = 0;
         Duration = 10; % (seconds)
         PathlossModel
+        ChannelPowerHistory % Dimensions (time,eNB,channel)
+        AvailableChannels = 1:12;
     end
-    
+    % Constants
     properties (Constant)
        TTIDuration = 0.001; 
     end
-    
+    % Private Properties
     properties(Access = protected)
         DistancesUE2eNB  % UE to eNB Distance [eNB, UE]
         Pathlosses % UE to eNB Pathloss [eNB, UE]
@@ -199,7 +201,7 @@ classdef Simulation < handle
             obj.MaxUEsOfAnyENB = maxUEs;
             
         end
-        % Get indexes of eNB with ue that have PacketQueue>0
+        % Get indexes of eNBs with UEs that have PacketQueue>0
         function activeENBs = GetActiveENBs(obj)
             
             activeENBs = [];
@@ -236,5 +238,23 @@ classdef Simulation < handle
                 set(obj.eNBs(eNB),property,value);
             end
         end
+        
+        % Save current eNB channel selections and power levels
+        function SaveChannels(obj)
+           
+            % Gather selections
+            hist = zeros(length(obj.eNBs),length(obj.AvailableChannels));
+            for eNB=1:length(obj.eNBs)
+                hist(eNB,obj.eNBs(eNB).ChannelsInUse) = 1;% FIX LATER TO HAVE POWER LEVELS
+            end
+            
+            % Add to history (3D matrix)
+            if isempty(obj.ChannelPowerHistory)
+                obj.ChannelPowerHistory = hist;
+            else
+                obj.ChannelPowerHistory(:,:,end+1) = hist;
+            end
+        end
+        
     end % Methods
 end
