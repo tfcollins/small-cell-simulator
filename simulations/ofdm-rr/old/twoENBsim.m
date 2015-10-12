@@ -46,7 +46,7 @@ TxMeanDuration = zeros(length(TransmitProbabilities),1);
 
 % flags
 testThroughput = false;
-debug = false
+debug = false;
 
 for y=1:length(TransmitProbabilities)
     
