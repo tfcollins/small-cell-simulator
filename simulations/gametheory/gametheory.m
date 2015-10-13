@@ -12,7 +12,7 @@ sim1.Duration = sim1.TTIDuration*MaxTries;
 sim1.MapDims = [10,10];
 
 %% Add Base Stations
-sim1.AddeNBs(2);
+sim1.AddeNBs(10);
 
 % Add UEs to eNB
 sim1.AddUEToEach(1);
@@ -27,8 +27,9 @@ sim1.eNBs(2).Position = [7,5];
 
 %% Place UEs
 radius = 1;
-sim1.eNBs(1).PlaceUEsUniformly(radius);
-sim1.eNBs(2).PlaceUEsUniformly(radius);
+for eNB=1:length(sim1.eNBs)
+    sim1.eNBs(eNB).PlaceUEsUniformly(radius);
+end
 
 %% Set Channels
 sim1.eNBs(1).SetUEChannels(1,2);
@@ -43,8 +44,9 @@ beta = 0.1; % Look at table for other values
 epsilon = 1e-5; % Look a graph for more values
 gm = struct('Fn',Fn,'beta',beta,'epsilon',epsilon,...
     'Personality','radical',...
+    'StrategyIndexes',[],...
     'StrategyCounter',zeros(1,nchoosek(K,Kn)),...
-    'PossibleStrategies',generateStraties(K,Kn));
+    'PossibleStrategies',generateStrategies(K,Kn));
 
 sim1.SetAlleNBs('GameModel',gm);
 

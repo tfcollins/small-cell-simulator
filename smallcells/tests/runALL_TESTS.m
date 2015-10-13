@@ -6,7 +6,7 @@ try
     display(results);
 catch e
     disp(getReport(e,'extended'));
-    exit(1);
+    %exit(1);
 end
 % Report Error
-exit(any([results.Failed]));
+%exit(any([results.Failed]));

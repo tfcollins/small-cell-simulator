@@ -9,10 +9,14 @@ numChannels = Kn;
 %% Run
 % Initialize some things
 
-% Update strategy based on SINR history
+% Update strategy based on SINR history and setup history
 for eNB=1:length(sim.eNBs)
+    sim.eNBs(eNB).GameModel.Utilies = [0,0];
+    sim.eNBs(eNB).GameModel.StrategyIndexes = [1,1]; %FIX LATER
     sim.eNBs(eNB).PickRandomChannels(numChannels);
 end
+
+
 
 
 % Iterate Through Game Theory Rounds
@@ -26,24 +30,27 @@ for TTI = 0:sim.TTIDuration:sim.Duration
     % vector
     sim.GetMeanSubchannelSINRs();
     
-    % Update utility
+    % Update and ave utilities of round
     UpdateUtilities(sim);
     
-    % Save utilities of round
-    
-    % Update Personalities
+    % Update Personalities, these historically dont need to be kept
     UpdatePersonalities(sim)
     
-    % Update Mixed Stategies Qn
+    % Update counter
+    UpdateCounter(sim);
+    
+    % Update Mixed Stategies Qn vector
     UpdateStrategies(sim);
     
     % Pick new stategies
+    UpdateCurrentStrategy(sim);
     
     % Update observations of round
     sim.SaveChannels();
     
     % View subchannel power levels network wide
-    sim.ViewSubchannels();
+    % sim.ViewSubchannels();
+    ViewCounts(sim);
     
 end
 
@@ -58,10 +65,8 @@ function UpdatePersonalities(sim)
 for eNB = 1:length(sim.eNBs)
     
     % Get game relevant values
-    LastChannelSelections =...
-        squeeze(sim.ChannelPowerHistory(end-1,eNB,:)); % Dimensions (time,eNB,channel)
-    CurrentChannelSelections =...
-        squeeze(sim.ChannelPowerHistory(end,eNB,:)); % Dimensions (time,eNB,channel)
+    LastChannelSelections = sim.eNBs(eNB).GameModel.StrategyIndexes(end-1);
+    CurrentChannelSelections = sim.eNBs(eNB).GameModel.StrategyIndexes(end);
     LastUtility = sim.eNBs(eNB).GameModel.Utilies(end-1);
     CurrentUtility = sim.eNBs(eNB).GameModel.Utilies(end);
     
@@ -91,6 +96,7 @@ for eNB = 1:length(sim.eNBs)
         pC = epsilon^(1-(CurrentUtility/Fn)^beta);
         pR = 1 - pC;
         if pR>pC
+            disp('radical');
             sim.eNBs(eNB).GameModel.Personality = 'radical';
         else
             sim.eNBs(eNB).GameModel.Personality = 'conservative';
@@ -104,19 +110,19 @@ end
 %% Calculate Utility
 function UpdateUtilities(sim)
 
-for eNB = 1:length(eNBs)
+for eNB = 1:length(sim.eNBs)
     
     Utility = 0;
     
     % Sum capacities over channels to get utilites
     for chan = 1:length(sim.eNBs(eNB).ChannelsInUse)
-        Utility = Utility + Bandwidth*...
-            log2(1 + eNB.MeanSubchannelSINR(chan));
+        Utility = Utility + sim.eNBs(eNB).Bandwidth/length(sim.eNBs(eNB).LicensedChannels)*...
+            log2(1 + sim.eNBs(eNB).MeanSubchannelSINR(chan));
     end
     
     % Save new utility to history
     sim.eNBs(eNB).GameModel.Utilies = ...
-        [sim.eNBs(eNB).GameModel.Utilies; Utility];
+        [sim.eNBs(eNB).GameModel.Utilies, Utility];
     
 end
 
@@ -163,18 +169,71 @@ for eNB = 1:length(sim.eNBs)
 
     % Probability vector
     P = sim.eNBs(eNB).GameModel.Qn;
+    
     % Strategy Indexes
-    X = 1:length(sim.eNBs(eNB).StrategyCounter);
+    X = 1:length(sim.eNBs(eNB).GameModel.StrategyCounter);
+    
     % Randomly pick strategy
     ChosenStrategyIndex = X(find(rand<cumsum(P),1,'first'));
-    % Set current strategy
-    sim.eNBs(eNB).GameModel.PossibleStrategies(ChosenStrategyIndex);
+    
+    % Convert strategy index to channel selection
+    vec = sim.eNBs(eNB).GameModel.PossibleStrategies(ChosenStrategyIndex,:);
+    indexes = 1:length(sim.eNBs(eNB).LicensedChannels);
+    sim.eNBs(eNB).ChannelsInUse = indexes(vec==1);
+    
+    % Save strategy index to history
+    sim.eNBs(eNB).GameModel.StrategyIndexes = ...
+        [sim.eNBs(eNB).GameModel.StrategyIndexes, ChosenStrategyIndex];
 
 end
 
 end
 
+% Update Strategy counter
+function UpdateCounter(sim)
 
+for eNB = 1:length(sim.eNBs)
 
+    if strcmpi(sim.eNBs(eNB).GameModel.Personality,'conservative')
+        
+        index = sim.eNBs(eNB).GameModel.StrategyIndexes(end);
+        
+        sim.eNBs(eNB).GameModel.StrategyCounter(index) = ...
+            sim.eNBs(eNB).GameModel.StrategyCounter(index) + 1;
+        
+    end
+    
+end
+
+end
+
+% View tally on each strategy by eNBs
+function ViewCounts(sim)
+
+% rows are groups of bars == subchannel
+% columns == eNB
+
+% Build input to bargraph
+tally = zeros(length(sim.eNBs(1).GameModel.StrategyCounter),length(sim.eNBs));
+
+for eNB = 1:length(sim.eNBs)
+    tally(:,eNB) =...
+        sim.eNBs(eNB).GameModel.StrategyCounter;
+end
+% Plot
+bar(tally);
+xlabel('strategy Index');
+ylabel('Counts');
+% Create legend
+leg = {};
+for eNB = 1:length(sim.eNBs)
+    leg = {leg{:},['eNB=',num2str(eNB)]};
+end
+
+legend(leg);
+drawnow;
+pause(0.1);
+
+end
 
 

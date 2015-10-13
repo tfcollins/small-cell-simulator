@@ -139,9 +139,9 @@ classdef Simulation < handle
                         
             % Calculate SINR
             if interferencePower==0
-            sinrLin = sigPowerReceivedLin/( thermalNoiseLin );
+                sinrLin = sigPowerReceivedLin/( thermalNoiseLin );
             else
-            sinrLin = sigPowerReceivedLin/( interferencePowerLin + thermalNoiseLin );
+                sinrLin = sigPowerReceivedLin/( interferencePowerLin + thermalNoiseLin );
             end
             
             % Convert back to dB
@@ -326,6 +326,8 @@ classdef Simulation < handle
             drawnow;
             pause(0.1);
         end
+        
+        
         
     end % Methods
 end
