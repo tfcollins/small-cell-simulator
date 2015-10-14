@@ -10,7 +10,7 @@ classdef PathlossSimpleLTE1 < handle
     % Model from: http://ieeexplore.ieee.org/lpdocs/epic03/wrapper.htm?arnumber=6868315
     %
     properties (Constant)
-        Lwall = 10;
+        Lwall = 5;
     end
     
     methods
@@ -19,6 +19,8 @@ classdef PathlossSimpleLTE1 < handle
         end
         % Get pathloss from distance
         function pl = GetPathloss(obj,distance,type)
+            
+            %distance = distance*0.001;
             
             if strcmpi(type,'Signal')
                 % No walls

@@ -9,6 +9,7 @@ classdef Simulation < handle
         PathlossModel
         ChannelPowerHistory % Dimensions (time,eNB,channel)
         AvailableChannels = 1:12;
+        AWGNPowerDensity = -174; % dBm/Hz
     end
     % Constants
     properties (Constant)
@@ -67,11 +68,11 @@ classdef Simulation < handle
            % Cycle through channels used by UE
            for chan=1:length(channelSet)
                obj.eNBs(eNBofUE).UEs(UE).ChannelSINRdB(chan) = ...
-               	GetSINRForUE(obj,eNBofUE,UE,channelSet(chan));
+               	GetSINRForUE(obj,eNBofUE,UE,channelSet(chan),'InterferenceIncluded');
            end 
         end
         % Calculate SINR at each UE of each eNB
-        function sinr = GetSINRForUE(obj,eNBofUE,UE,Channel)
+        function sinr = GetSINRForUE(obj,eNBofUE,UE,Channel,include)
             
             % Check channel being  used
             if sum(obj.eNBs(eNBofUE).UEs(UE).UsingChannels==Channel)==0
@@ -91,7 +92,7 @@ classdef Simulation < handle
             % Fading is zero mean with variance ...
             variance = sqrt(4); % dB
             FadingLoss = variance*randn;
-            FadingLoss = 0; %FIX LATER
+            %FadingLoss = 0; %FIX LATER
             
             % Link budget
             sigPowerReceived = ...
@@ -102,7 +103,7 @@ classdef Simulation < handle
                 + obj.eNBs(eNBofUE).UEs(UE).AntennaGain;
             
             % Interference Power
-            interferencePower = 0;
+            interferencePowers = [];
             for eNB = 1:length(obj.eNBs)
                 
                 % Check if the other are using the channel
@@ -116,32 +117,39 @@ classdef Simulation < handle
                     % Fading is zero mean with variance ...
                     variance = sqrt(4); % dB
                     FadingLoss = variance*randn;
-                    FadingLoss = 0; % TODO: Fix later
+                    %FadingLoss = 0; % TODO: Fix later
                     
                     % Link budget
-                    interferencePower = interferencePower ...
-                        + obj.eNBs(eNB).TxPower ...
+                    interferencePowers = [interferencePowers, ...
+                        obj.eNBs(eNB).TxPower ...
                         + obj.eNBs(eNB).AntennaGain ...
-                        - obj.PathlossModel.GetPathloss(distance,'Interference') ...
+                        - obj.PathlossModel.GetPathloss(distance,'Interference') ...%Interference
                         - FadingLoss ...
-                        + obj.eNBs(eNB).UEs(UE).AntennaGain;
+                        + obj.eNBs(eNB).UEs(UE).AntennaGain]; %#ok<AGROW>
                 end
             end
             
-            % Thermal noise
-            thermalNoise = -174+10*log10(obj.eNBs(eNB).Bandwidth); % TODO: Relook this up
+            % Thermal noise replaced by obj.AWGNPowerDensity
+            %thermalNoise = -174+10*log10(obj.eNBs(eNB).Bandwidth); % TODO: Relook this up
             
+            % Reduce bandwidth
+            ChannelBandwidth = obj.eNBs(eNBofUE).Bandwidth/...
+                length(obj.eNBs(eNBofUE).LicensedChannels);
             
             % Convert from dBm to Linear (Watts)
             sigPowerReceivedLin = 10^((sigPowerReceived)/10);
-            interferencePowerLin = 10^((interferencePower)/10);
-            thermalNoiseLin = 10^((thermalNoise)/10);
+            interferencePowersLin = 10.^((interferencePowers)/10);
+            %thermalNoiseLin = 10^((thermalNoise)/10);
+            AWGNPowerDensityLinear = 10^((obj.AWGNPowerDensity)/10);
                         
+            % Sum interference
+            interferencePowerLin = sum(interferencePowersLin);
+            
             % Calculate SINR
-            if interferencePower==0
-                sinrLin = sigPowerReceivedLin/( thermalNoiseLin );
+            if (isempty(interferencePowers) || ~strcmpi(include,'InterferenceIncluded'))
+                sinrLin = sigPowerReceivedLin/( AWGNPowerDensityLinear*ChannelBandwidth );
             else
-                sinrLin = sigPowerReceivedLin/( interferencePowerLin + thermalNoiseLin );
+                sinrLin = sigPowerReceivedLin/( interferencePowerLin + AWGNPowerDensityLinear*ChannelBandwidth );
             end
             
             % Convert back to dB
@@ -278,6 +286,7 @@ classdef Simulation < handle
                    % Get each SINR for UEs in that channel
                    for UE=1:length(obj.eNBs(eNB).UEs)
                    
+                       % Check if UE is using this channel
                        channelCheck = obj.eNBs(eNB).UEs(UE).UsingChannels...
                            ==obj.eNBs(eNB).ChannelsInUse(channel);
                        
@@ -293,7 +302,11 @@ classdef Simulation < handle
                    end % UEs
                    
                    % Average UE SINR's
-                   obj.eNBs(eNB).MeanSubchannelSINR(channel) = mean(ChannelSINR);
+                   if isempty(ChannelSINR)
+                       error('Channel assignments incorrect between eNB and UE')
+                   else
+                       obj.eNBs(eNB).MeanSubchannelSINR(channel) = mean(ChannelSINR);
+                   end
                    
                end % Channels
            end % eNBs

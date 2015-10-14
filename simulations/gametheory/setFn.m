@@ -1,23 +1,26 @@
-function setFn(sim,subchannels)
+function setFn(sim,MaxSubchannels)
 
-    % Fn is simply the SINR of the received signal without interference,
-    % only thermal noise
+% Fn is simply the SINR of the received signal without interference,
+% only thermal noise
+
+% Determine Fn for each eNB assuming 1 UE attached
+UE = 1;
+for eNB = 1:length(sim.eNBs)
     
-    % Determine Fn for each eNB assuming 1 UE attached
-    for eNB = 1:length(sim.eNBs)
-        % Sum over used channels
-        for chan = 1:subchannels
-            sigPowerReceived = ...
-                sim.eNBs(eNBofUE).TxPower ...
-                + sim.eNBs(eNBofUE).AntennaGain ...
-                - sim.PathlossModel.GetPathloss(distance,'Signal') ...
-                - FadingLoss ...
-                + sim.eNBs(eNBofUE).UEs(UE).AntennaGain;
-            
-            thermalNoise = -174+10*log10(obj.eNBs(eNB).Bandwidth); % TODO: Relook this up
-        end
-        
-        sim.eNBs(eNB).GameModel.Fn = Fn;
+    SINRdB = [];
+    for subchannel = 1:MaxSubchannels
+       SINRdB = [SINRdB, sim.GetSINRForUE(eNB,UE,MaxSubchannels,'InterferenceNotIncluded')]; %#ok<AGROW>
     end
+    
+    ChannelBandwidth = sim.eNBs(eNB).Bandwidth/...
+                length(sim.eNBs(eNB).LicensedChannels);
+    
+    % SINR to achievable rate
+    R = ChannelBandwidth*log2(1+SINRdB);
+    
+    % Sum rates
+    sim.eNBs(eNB).GameModel.Fn = sum(R);
+    
+end
 
 end

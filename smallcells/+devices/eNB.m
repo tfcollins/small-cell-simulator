@@ -70,14 +70,27 @@ classdef eNB < handle & matlab.mixin.SetGet
         % Pick channels randomly (used really for testing)
         function PickRandomChannels(obj,numChannels)
             
+            warning('Not set as random');
             % Shuffle possible channels
             shuffledChannels = randperm(length(obj.LicensedChannels));
+            shuffledChannels = 1:10;
             % Pick subset
-            obj.ChannelsInUse = shuffledChannels(1:numChannels);
+            obj.ChannelsInUse = sort(shuffledChannels(1:numChannels));
             % Let all UEs to use all these channels
             for UE = 1:length(obj.UEs)
                 obj.UEs(UE).UsingChannels = obj.ChannelsInUse;
             end
+            % Convert channel selection to strategy index
+            for ChosenStrategyIndex = 1:length(obj.GameModel.PossibleStrategies)
+                
+                if sum(obj.GameModel.PossibleStrategies(ChosenStrategyIndex,obj.ChannelsInUse))...
+                        ==numChannels;
+                    break
+                end
+            end
+            % Save strategy index to history
+            obj.GameModel.StrategyIndexes = ...
+                [obj.GameModel.StrategyIndexes, ChosenStrategyIndex];
         end
     end
 end
